@@ -1,5 +1,5 @@
 # Group Query Attention (GQA) 详解：原理、实现与优势
-完整代码链接：
+完整代码链接：https://github.com/allplepine/MyNotes/blob/master/src/group_query_attention.ipynb
 ## 1. 引言
 
 在大型语言模型（LLM）的发展过程中，注意力机制一直是核心组件。从最初的Transformer到现在的GPT、LLaMA等模型，注意力机制在计算效率和内存使用方面面临着越来越大的挑战。目前主流的注意力机制包括**标准多头注意力（Multi-Head Attention, MHA）**、**分组查询注意力（Group Query Attention, GQA）** 和**多查询注意力（Multi-Query Attention, MQA）**。其中，GQA作为MHA和MQA的中间方案，在保持模型性能的同时显著减少了计算复杂度和内存使用，成为平衡效率与性能的重要选择。
