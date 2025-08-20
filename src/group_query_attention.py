@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional
-
+from typing import Optional, Union, Any
 class GroupQueryAttention(nn.Module):
     """
     Group Query Attention (GQA) 实现
@@ -43,10 +42,10 @@ class GroupQueryAttention(nn.Module):
         # 投影层定义
         # Q投影：所有头都有独立的Q投影
         self.q_proj = nn.Linear(d_model, d_model, bias=False)
-        # K投影：每组共享一个K投影，所以维度是 n_heads_per_group * head_dim
-        self.k_proj = nn.Linear(d_model, self.n_heads_per_group * self.head_dim, bias=False)
-        # V投影：每组共享一个V投影，所以维度是 n_heads_per_group * head_dim
-        self.v_proj = nn.Linear(d_model, self.n_heads_per_group * self.head_dim, bias=False)
+        # K投影：每组共享一个K投影，所以维度是 n_groups * head_dim
+        self.k_proj = nn.Linear(d_model, self.n_groups * self.head_dim, bias=False)
+        # V投影：每组共享一个V投影，所以维度是 n_groups * head_dim
+        self.v_proj = nn.Linear(d_model, self.n_groups * self.head_dim, bias=False)
         # 输出投影层
         self.out_proj = nn.Linear(d_model, d_model, bias=False)
         
@@ -72,9 +71,9 @@ class GroupQueryAttention(nn.Module):
         # Q: 所有头都有独立的投影
         q = self.q_proj(x)  # (batch_size, seq_len, d_model)
         # K: 每组共享投影，所以维度较小
-        k = self.k_proj(x)  # (batch_size, seq_len, n_heads_per_group * head_dim)
+        k = self.k_proj(x)  # (batch_size, seq_len, n_groups * head_dim)
         # V: 每组共享投影，所以维度较小
-        v = self.v_proj(x)  # (batch_size, seq_len, n_heads_per_group * head_dim)
+        v = self.v_proj(x)  # (batch_size, seq_len, n_groups * head_dim)
         
         # 步骤2: 重塑张量维度
         # Q: 重塑为多头格式
@@ -123,8 +122,27 @@ class GroupQueryAttention(nn.Module):
     
 # 测试代码
 if __name__ == "__main__":
+    #================第一次测试====================
     # 创建GQA实例
     gqa = GroupQueryAttention(d_model=1024, n_heads=16, n_groups=4)
+    
+    # 创建测试输入
+    x = torch.randn(1, 1024, 1024)  # (batch_size=1, seq_len=1024, d_model=1024)
+    
+    # 创建因果掩码（用于自回归生成）
+    mask = torch.tril(torch.ones(1024, 1024))
+    
+    # 前向传播
+    output = gqa(x, mask)
+    print(f"输入形状: {x.shape}")
+    print(f"输出形状: {output.shape}")
+    print(f"GQA配置: d_model={gqa.d_model}, n_heads={gqa.n_heads}, n_groups={gqa.n_groups}")
+    print(f"每组头数: {gqa.n_heads_per_group}")
+    print(f"头维度: {gqa.head_dim}")
+    
+    #================第二次测试====================
+    # 创建GQA实例
+    gqa = GroupQueryAttention(d_model=1024, n_heads=32, n_groups=4)
     
     # 创建测试输入
     x = torch.randn(1, 1024, 1024)  # (batch_size=1, seq_len=1024, d_model=1024)
